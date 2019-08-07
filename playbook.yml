@@ -1,0 +1,52 @@
+---
+
+- name: Build Windows server.
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Firewall rules
+      win_shell: |
+        Set-NetFirewallProfile -Profile Domain -Enabled False
+        Set-NetFirewallRule -Group "@FirewallAPI.dll,-28502" -Direction Inbound -Profile Domain -Enabled True
+
+    - name: Install AD UAC, GPM
+      win_shell: |
+        Import-Module ServerManager
+        Add-WindowsFeature RSAT-ADDS-Tools
+        Add-WindowsFeature –Name GPMC
+        Add-WindowsFeature -Name Telnet-Client
+
+    - name: Set timezone to 'GMT Standard Time' (GMT)
+      win_timezone:
+        timezone: GMT Standard Time
+
+    - name: Create scripts directory
+      win_file:
+        path: C:\scripts
+        state: directory
+
+    - name: Copy stopped service monitoring PS script
+      win_copy:
+        src: ./scripts/monitor_stopped_win_services.ps1
+        dest: C:\scripts\
+
+    - name: Setup service monitor scheduled task
+      win_shell: |
+        $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass C:\scripts\monitor_win_services.ps1"
+        $trigger = New-ScheduledTaskTrigger -Daily -At (Get-Date)
+        $description = "Run Stopped service monitor every minute forever."
+        $principal = New-ScheduledTaskPrincipal -UserID "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+        $task = Register-ScheduledTask -TaskName "Stopped_Automatic_Services" -Trigger $trigger -Action $action -Description $description -Principal $principal
+        $task.Triggers.Repetition.Duration = "P1D"
+        $task.Triggers.Repetition.Interval = "PT1M"
+        $task | Set-ScheduledTask
+
+    - name: Install Windows File Server role
+      win_feature:
+        name: FS-FileServer
+        state: present
+
+    - name: Install Windows NFS role
+      win_feature:
+        name: FS-NFS-Service
+        state: present
