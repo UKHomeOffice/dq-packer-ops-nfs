@@ -6,6 +6,15 @@ This AMI is used as a NFS share box
 ### `packer.json`
 This file contains a wrap up for Ansible script to be run inside a Windows 2012 R2 server
 
+### `playbook.yml`
+Ansible playbook installing the following:
+- Creation of firewall rules
+- Installation of neccessary NFS roles
+- Setup of service monitor scheduled task
+
+### `connection_plugins`
+- `packer.py` ssh based connections for powershell via packer
+
 #### `scripts`
 - `disable-esc-and-iac.ps1` turn off annoying Windows pop-ups
 - `monitor_stopped_win_services.ps1` checks if there are any service in the *stopped* state where they are set to *automatic* startup
