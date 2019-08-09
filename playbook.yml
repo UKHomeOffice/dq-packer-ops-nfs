@@ -20,6 +20,32 @@
       win_timezone:
         timezone: GMT Standard Time
 
+    - name: Install python3
+      win_chocolatey:
+        name: python3
+        state: present
+
+    - name: Install python packages
+      win_shell: |
+        pip install boto3
+
+    - name: Ensure that Python3 is present on the global system path
+      win_path:
+        elements:
+        - 'C:\Python36'
+
+    - name: Download AWSCLI
+      win_shell: |
+        $url = "https://s3.amazonaws.com/aws-cli/AWSCLI64.msi"
+        $output = "C:\tmp\install\AWSCLI64.msi"
+        $wc = New-Object System.Net.WebClient
+        $wc.DownloadFile($url, $output)
+
+    - name: AWS CLI install
+      win_package:
+        path: C:\tmp\install\AWSCLI64.msi
+        state: present
+
     - name: Create scripts directory
       win_file:
         path: C:\scripts
@@ -29,6 +55,22 @@
       win_copy:
         src: ./scripts/monitor_stopped_win_services.ps1
         dest: C:\scripts\
+
+    - name: Copy sqlworkbench config script
+      win_copy:
+        src: ./scripts/nfs_backup.py
+        dest: C:\scripts\
+
+    - name: Setup backup scheduled task
+      win_shell: |
+        $action = New-ScheduledTaskAction -Execute "C:\Python37\python.exe" -Argument "C:\scripts\nfs_backup.py"
+        $trigger = New-ScheduledTaskTrigger -Daily -At (Get-Date)
+        $description = "Run nfs backup task every 12h"
+        $principal = New-ScheduledTaskPrincipal -UserID "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+        $task = Register-ScheduledTask -TaskName "NFS_Backup_Task" -Trigger $trigger -Action $action -Description $description -Principal $principal
+        $task.Triggers.Repetition.Duration = "P1D"
+        $task.Triggers.Repetition.Interval = "PT720M"
+        $task | Set-ScheduledTask
 
     - name: Setup service monitor scheduled task
       win_shell: |
