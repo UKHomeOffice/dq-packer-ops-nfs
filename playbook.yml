@@ -20,6 +20,11 @@
       win_timezone:
         timezone: GMT Standard Time
 
+    - name: Create tmp directory
+      win_file:
+        path: C:\tmp\install
+        state: directory
+
     - name: Install python3
       win_chocolatey:
         name: python3
