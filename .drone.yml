@@ -16,7 +16,7 @@ pipeline:
     image: quay.io/ukhomeofficedigital/dq-packer-ansible
     commands:
       - export HOME=/home/packer
-      - packer build packer.json
+      #- packer build packer.json
     secrets:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
@@ -32,7 +32,7 @@ pipeline:
       - export region=eu-west-2
       - export HOME=/home/packer
       - cd /home/packer
-      - ./build.sh
+      #- ./build.sh
     secrets:
       - NOTPROD_ACC_ID
       - NOTPROD_ACC_KEY
@@ -49,7 +49,7 @@ pipeline:
       - export region=eu-west-2
       - export HOME=/home/packer
       - cd /home/packer
-      - ./build.sh
+      #- ./build.sh
     secrets:
       - PROD_ACC_ID
       - PROD_ACC_KEY
